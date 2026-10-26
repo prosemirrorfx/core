@@ -15,11 +15,15 @@ import static prosemirrorfx.core.pm.Pm.*;
 public final class EditorModel {
 
     PMEditorState state;
+    Transaction last;
     final List<BiConsumer<PMEditorState, PMEditorState>> listeners = new ArrayList<>();
 
     public EditorModel(Node doc) { state = Pm.state(doc, atEnd(doc)); }
 
     public PMEditorState state() { return state; }
+
+    /** The transaction behind the change listeners are being told about, to map positions through; null after load. */
+    public Transaction lastTransaction() { return last; }
 
     public void onChange(BiConsumer<PMEditorState, PMEditorState> l) { listeners.add(l); }
 
@@ -37,6 +41,7 @@ public final class EditorModel {
         }
         var old = state;
         state = state.apply(tr);
+        last = tr;
         listeners.forEach(l -> l.accept(old, state));
     }
 
@@ -55,6 +60,7 @@ public final class EditorModel {
     public void load(Node doc) {
         var old = state;
         state = Pm.state(doc, atStart(doc));
+        last = null;
         listeners.forEach(l -> l.accept(old, state));
     }
 }
